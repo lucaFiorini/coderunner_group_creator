@@ -9,11 +9,9 @@
 #   
 #   If a student is alrady in a different group, then the system will remove them from the previous group and try to add them to the next group
 #   num_rows num_columns column_headers 
-
-
+import portalocker
 from enum import Enum,auto       
 from pydantic import BaseModel,TypeAdapter
-import fcntl
 from dataclasses import dataclass
 import json
 
@@ -48,12 +46,8 @@ class GroupManager[MemberIDType]:
         WRONG_PASSWORD = auto()
     
     def register(self, group_name : str, group_password : str, member_id : MemberIDType) -> Result[None,AddError]:
-        
-        with open(self.source,"w") as f:
-            
-            #Ensure operation is atomic (wait for lock to be freed)
-            fcntl.flock(f, fcntl.LOCK_EX)
-            
+        with portalocker.open_atomic(self.source) as f:
+                      
             group_data = self.get_data()            
             add_error : None|GroupManager.AddError = None
             
@@ -75,10 +69,7 @@ class GroupManager[MemberIDType]:
                     ))
 
             #Update file
-            json.dump(group_data,f)
-            
-            #Free lock
-            fcntl.flock(f, fcntl.LOCK_UN)
+            f.write(json.dumps(group_data))
             
             #Return files
             if add_error != None:
