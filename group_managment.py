@@ -48,10 +48,12 @@ class GroupManager[MemberIDType]:
         WRONG_PASSWORD = auto()
     
     def register(self, group_name : str, group_password : str, member_id : MemberIDType) -> Result[None,AddError]:
+        
         with open(self.source,"w") as f:
             
             #Ensure operation is atomic (wait for lock to be freed)
             fcntl.flock(f, fcntl.LOCK_EX)
+            
             group_data = self.get_data()            
             add_error : None|GroupManager.AddError = None
             
