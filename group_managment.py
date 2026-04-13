@@ -38,7 +38,7 @@ class GroupManager[MemberIDType]:
         self.source = source
         
     def get_data(self):
-        with open(self.source) as f:
+        with portalocker.Lock(self.source,'r') as f:
             return TypeAdapter(list[Group[MemberIDType]]).validate_json(f.read())
 
     class AddError(Enum):
@@ -47,8 +47,8 @@ class GroupManager[MemberIDType]:
     
     def register(self, group_name : str, group_password : str, member_id : MemberIDType) -> Result[None,AddError]:
         with portalocker.Lock(self.source,'r+') as f:
-                      
-            group_data = self.get_data()            
+
+            group_data = TypeAdapter(list[Group[MemberIDType]]).validate_json(f.read())
             add_error : None|GroupManager.AddError = None
             
             group_exists = False
@@ -70,9 +70,15 @@ class GroupManager[MemberIDType]:
                     password=group_password,
                     members=[member_id]
                 ))
-
+            
+            #Clear empty groups
+            group_data[:] = [group for group in group_data if len(group.members) > 0]
+            
+            #Clear file
+            f.truncate(0)
+            
             #Update file
-            json.dump([group.model_dump() for group in group_data],f)
+            json.dump([group.model_dump() for group in group_data],f,indent=2)
             
             #Return files
             if add_error != None:
