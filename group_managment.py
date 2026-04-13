@@ -76,6 +76,7 @@ class GroupManager[MemberIDType]:
             
             #Clear file
             f.truncate(0)
+            f.seek(0)
             
             #Update file
             json.dump([group.model_dump() for group in group_data],f,indent=2)
