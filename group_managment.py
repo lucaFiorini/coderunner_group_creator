@@ -72,7 +72,7 @@ class GroupManager[MemberIDType]:
                 ))
 
             #Update file
-            f.write([group.model_dump() for group in group_data])
+            json.dump([group.model_dump() for group in group_data],f)
             
             #Return files
             if add_error != None:
