@@ -51,22 +51,25 @@ class GroupManager[MemberIDType]:
             group_data = self.get_data()            
             add_error : None|GroupManager.AddError = None
             
+            group_exists = False
             for group in group_data:
                 if member_id in group.members:
                     group.members.remove(member_id)
                 if group.name == group_name:
                     #Group found, add user to group
+                    group_exists = True
                     if group.password == group_password:
                         group.members.append(member_id)
                     else:
                         add_error = GroupManager.AddError.WRONG_PASSWORD
-                else:
-                    #Group not found, create group
-                    group_data.append(Group(
-                        name=group_name,
-                        password=group_password,
-                        members=[member_id]
-                    ))
+
+            if not group_exists:
+                #Group not found, create group
+                group_data.append(Group(
+                    name=group_name,
+                    password=group_password,
+                    members=[member_id]
+                ))
 
             #Update file
             f.write(json.dumps(group_data))
